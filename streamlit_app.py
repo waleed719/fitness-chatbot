@@ -207,6 +207,25 @@ if prompt := st.chat_input("Ask for detailed fitness advice..."):
         
         message_placeholder.markdown(bot_response) # Display the actual response
 
+    hide_streamlit_style = """
+    <style>
+    /* Hide the "Hosted with Streamlit" badge */
+    .viewerBadge_container__1QSob, .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137, .viewerBadge_text__1JaDK {
+        display: none;
+    }
+    
+    /* Also hide the main menu and footer for a cleaner look if desired */
+    #MainMenu {
+        visibility: hidden;
+    }
+    footer {
+        visibility: hidden;
+    }
+    </style>
+    """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+    
     st.session_state.messages.append({"role": "assistant", "content": bot_response})
     st.session_state.conversation_api_history.append({"role": "model", "parts": [{"text": bot_response}]})
 
