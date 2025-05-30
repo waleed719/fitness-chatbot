@@ -10,7 +10,6 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
 
-
 FITNESS_FAQS = {
     "what is your name": "I am a Fitness Chatbot, designed to help you with your fitness queries!",
     "how to lose weight": "Losing weight typically involves a combination of a balanced diet and regular exercise. Consider consulting a nutritionist or a fitness expert for a personalized plan.",
@@ -67,12 +66,14 @@ async def get_chatbot_response(user_message: str, conversation_api_history: list
             "topK": 40,
             "maxOutputTokens": 1500
         },
+        # --- FIX APPLIED HERE: safetySettings moved outside generationConfig ---
         "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
         ]
+        # --- END OF FIX ---
     }
 
     try:
