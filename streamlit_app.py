@@ -207,6 +207,20 @@ if prompt := st.chat_input("Ask for detailed fitness advice..."):
         
         message_placeholder.markdown(bot_response) # Display the actual response
 
+    hide_github_icon = """
+    <style>
+    #GithubIcon {
+        visibility: hidden;
+    }
+    /* You might also try to hide the entire menu if the above doesn't work */
+    #MainMenu {
+        visibility: hidden;
+    }
+    </style>
+    """
+    st.markdown(hide_github_icon, unsafe_allow_html=True)
+
+    
     hide_streamlit_style = """
     <style>
     /* Hide the "Hosted with Streamlit" badge */
