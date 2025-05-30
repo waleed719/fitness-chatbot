@@ -10,6 +10,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
 
+
 FITNESS_FAQS = {
     "what is your name": "I am a Fitness Chatbot, designed to help you with your fitness queries!",
     "how to lose weight": "Losing weight typically involves a combination of a balanced diet and regular exercise. Consider consulting a nutritionist or a fitness expert for a personalized plan.",
@@ -44,7 +45,6 @@ SYSTEM_INSTRUCTION = (
     "For specific medical or dietary conditions, always advise the user to consult a professional."
 )
 
-
 def strip_markdown(text):
     return text
 
@@ -65,14 +65,14 @@ async def get_chatbot_response(user_message: str, conversation_api_history: list
             "temperature": 0.75,
             "topP": 0.95,
             "topK": 40,
-            "maxOutputTokens": 1500,
-        "safetySettings": [ 
+            "maxOutputTokens": 1500
+        },
+        "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
         ]
-        }
     }
 
     try:
@@ -111,69 +111,58 @@ async def get_chatbot_response(user_message: str, conversation_api_history: list
         st.error(f"An unexpected error occurred: {e}")
         return "I'm having a bit of trouble understanding right now. Could you try rephrasing?"
 
-
 st.set_page_config(page_title="Fitness Chatbot Pro", page_icon="🏋️‍♂️", layout="centered")
 
 custom_theme_css = """
 <style>
-/* Define CSS variables for easier color management */
 :root {
-    --primary-color: #E63946; /* Strong red for accents */
-    --background-color: #1A1A1A; /* Very dark main background */
-    --secondary-background-color: #262730; /* Slightly lighter dark for sidebar, inputs */
-    --text-color: #FAFAFA; /* Off-white for general text */
-    --chat-bubble-user-color: #31333F; /* Darker grey for user chat bubbles */
-    --chat-bubble-assistant-color: var(--secondary-background-color); /* Assistant uses secondary background */
-    --border-color: #444444; /* Darker border for elements */
+    --primary-color: #E63946;
+    --background-color: #1A1A1A;
+    --secondary-background-color: #262730;
+    --text-color: #FAFAFA;
+    --chat-bubble-user-color: #31333F;
+    --chat-bubble-assistant-color: var(--secondary-background-color);
+    --border-color: #444444;
 }
 
-/* Overall app background */
 .stApp {
     background-color: var(--background-color) !important;
 }
 
-/* Main content area background */
 body {
     background-color: var(--background-color) !important;
-    color: var(--text-color) !important; /* Default text color */
+    color: var(--text-color) !important;
 }
 
-/* All text elements for consistency */
 h1, h2, h3, h4, h5, h6, p, li, span, div, .stMarkdown, .stText {
     color: var(--text-color) !important;
 }
 
-/* Streamlit Header (title, caption) */
-/* Targeting by generic class that covers titles/captions */
-.st-emotion-cache-nahz7x { /* Adjust this class if needed, it often refers to header/title container */
+.st-emotion-cache-nahz7x {
     color: var(--text-color) !important;
 }
-.st-emotion-cache-1r6c0d6 { /* Another common class for Streamlit titles */
+.st-emotion-cache-1r6c0d6 {
     color: var(--text-color) !important;
 }
 
-/* Sidebar styling */
 .stSidebar {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
 }
 
-/* Sidebar header/title color */
-.stSidebar .st-emotion-cache-1cpx6h, .stSidebar .st-emotion-cache-109040r { 
+.stSidebar .st-emotion-cache-1cpx6h, .stSidebar .st-emotion-cache-109040r {
     color: var(--text-color) !important;
 }
 
-/* Sidebar links */
 .stSidebar a {
-    color: var(--primary-color) !important; /* Make links stand out */
-    text-decoration: none; /* Remove underline */
+    color: var(--primary-color) !important;
+    text-decoration: none;
 }
 .stSidebar a:hover {
-    color: lightgray !important; /* Lighter hover color */
-    text-decoration: underline; /* Add underline on hover */
+    color: lightgray !important;
+    text-decoration: underline;
 }
 
-/* Buttons */
 .stButton button {
     background-color: var(--primary-color) !important;
     color: var(--text-color) !important;
@@ -182,65 +171,56 @@ h1, h2, h3, h4, h5, h6, p, li, span, div, .stMarkdown, .stText {
     transition: background-color 0.3s ease;
 }
 .stButton button:hover {
-    background-color: #BB2D3A !important; /* Slightly darker red on hover */
+    background-color: #BB2D3A !important;
     color: white !important;
     border-color: #BB2D3A !important;
 }
 
-/* Input fields (text input, number input, text area, selectbox) */
 .stTextInput > div > div > input,
 .stNumberInput > div > div > input,
 .stTextArea > div > div > textarea,
-.stSelectbox > div > div > div > input { /* For selectbox input area */
+.stSelectbox > div > div > div > input {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 5px !important;
 }
-/* For the dropdown arrow of selectbox */
 .stSelectbox > div > div > div > div {
     color: var(--text-color) !important;
 }
 
-/* Chat message bubbles */
 .stChatMessage {
     padding: 10px !important;
     border-radius: 10px !important;
     margin-bottom: 10px !important;
 }
 
-/* User chat bubble */
-.stChatMessage.st-emotion-cache-user .stMarkdown { /* Specific class for user message container */
+.stChatMessage.st-emotion-cache-user .stMarkdown {
     background-color: var(--chat-bubble-user-color) !important;
     color: var(--text-color) !important;
     border-radius: 10px !important;
     padding: 10px !important;
 }
 
-/* Assistant chat bubble */
-.stChatMessage.st-emotion-cache-assistant .stMarkdown { /* Specific class for assistant message container */
+.stChatMessage.st-emotion-cache-assistant .stMarkdown {
     background-color: var(--chat-bubble-assistant-color) !important;
     color: var(--text-color) !important;
     border-radius: 10px !important;
     padding: 10px !important;
 }
 
-/* Chat input box (outer container) */
-/* These classes can change with Streamlit updates. Use browser dev tools if issues persist. */
-.st-emotion-cache-1oe5f0g, .st-emotion-cache-f1x29i, .st-emotion-cache-1d37b6c { 
+.st-emotion-cache-1oe5f0g, .st-emotion-cache-f1x29i, .st-emotion-cache-1d37b6c {
     background-color: var(--secondary-background-color) !important;
     border-top: 1px solid var(--border-color) !important;
     padding: 10px 0 !important;
 }
-/* The actual text input field within chat input */
-.st-emotion-cache-1ae4qfn { 
+.st-emotion-cache-1ae4qfn {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 5px !important;
 }
 
-/* Hide Streamlit branding and GitHub icon - existing (with !important for robustness) */
 .viewerBadge_container__1QSob, .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137, .viewerBadge_text__1JaDK {
     display: none !important;
     visibility: hidden !important;
@@ -278,16 +258,20 @@ group_members = [
 for member in group_members:
     st.sidebar.markdown(f"**[{member['name']}]({member['github_url']})**")
     st.sidebar.markdown("")
+
 st.sidebar.markdown("---")
+
 
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "Hello! I'm your Fitness Chatbot Pro. Ask me anything about fitness for a detailed response!"}]
 if "conversation_api_history" not in st.session_state:
     st.session_state.conversation_api_history = []
 
+
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+
 if prompt := st.chat_input("Ask for detailed fitness advice..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.session_state.conversation_api_history.append({"role": "user", "parts": [{"text": prompt}]})
