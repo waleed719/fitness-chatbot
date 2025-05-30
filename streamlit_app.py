@@ -65,7 +65,7 @@ async def get_chatbot_response(user_message: str, conversation_api_history: list
             "temperature": 0.75,
             "topP": 0.95,
             "topK": 40,
-            "maxOutputTokens": 1500
+            "maxOutputTokens": 1500,
         "safetySettings": [ 
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
