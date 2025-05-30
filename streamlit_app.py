@@ -72,6 +72,7 @@ async def get_chatbot_response(user_message: str, conversation_api_history: list
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
         ]
+        }
     }
 
     try:
