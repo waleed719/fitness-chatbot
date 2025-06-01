@@ -6,6 +6,11 @@ Welcome to the AI Fitness Chatbot Project! This application is designed to be yo
 
 It leverages the power of Google's Gemini Large Language Model (LLM) and a curated set of frequently asked questions to offer tailored advice, exercise instructions, and answer your fitness-related questions.
 
+## Live Demo
+
+You can try out the AI Fitness Chatbot live here:
+**[Fitness Chatbot Pro](https://fitness-chatbot-pro.streamlit.app/)**
+
 ## Features
 
 This AI Fitness Chatbot includes features such as:
