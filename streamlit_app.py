@@ -1,62 +1,91 @@
 import streamlit as st
 import httpx
 import os
-import re
 import asyncio
 from dotenv import load_dotenv
+import uuid
+
+st.set_page_config(layout="wide")
 
 load_dotenv()
-
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
 
 FITNESS_FAQS = {
-    "what is your name": "I am a Fitness Chatbot, designed to help you with your fitness queries!",
-    "how to lose weight": "Losing weight typically involves a combination of a balanced diet and regular exercise. Consider consulting a nutritionist or a fitness expert for a personalized plan.",
-    "best exercises for beginners": "For beginners, bodyweight exercises like squats, push-ups (modified if needed), planks, and lunges are great. Walking or light jogging are also excellent starting points.",
-    "how much water should I drink daily": "Generally, it's recommended to drink around 8 glasses (about 2 liters) of water daily, but this can vary based on activity level, climate, and individual needs.",
-    "what is protein good for": "Protein is essential for muscle repair and growth, hormone production, and overall body function. It's crucial for anyone engaging in physical activity.",
-    "how to build muscle": "Building muscle requires progressive overload in strength training, adequate protein intake, and sufficient rest. Consistency is key!",
-    "what is cardio": "Cardio (cardiovascular exercise) strengthens your heart and lungs. Examples include running, swimming, cycling, and brisk walking.",
-    "how often should I work out": "For general health, aim for at least 150 minutes of moderate-intensity aerobic activity or 75 minutes of vigorous-intensity aerobic activity per week, plus strength training 2-3 times a week.",
-    "what is a balanced diet": "A balanced diet includes a variety of fruits, vegetables, whole grains, lean proteins, and healthy fats. It provides all the necessary nutrients for your body.",
-    "can you help me with a workout plan": "While I can offer general advice, I'm not a certified personal trainer. For a personalized workout plan, I recommend consulting a professional fitness coach.",
-    "what are macronutrients": "Macronutrients are nutrients that the body needs in large amounts: carbohydrates, proteins, and fats. They provide energy and are essential for bodily functions.",
-    "what are micronutrients": "Micronutrients are vitamins and minerals that the body needs in smaller amounts. They are crucial for various bodily functions and overall health.",
-    "how to stay motivated": "Set realistic goals, track your progress, find an exercise buddy, try different activities to keep things interesting, and celebrate small victories!",
-    "is stretching important": "Yes, stretching improves flexibility, reduces muscle soreness, and can help prevent injuries. Incorporate dynamic stretches before workouts and static stretches after.",
-    "what is HIIT": "HIIT stands for High-Intensity Interval Training. It involves short bursts of intense exercise followed by brief recovery periods. It's effective for burning calories and improving cardiovascular fitness.",
-    "what are electrolytes": "Electrolytes are minerals like sodium, potassium, and calcium that help regulate fluid balance, muscle contractions, and nerve signals. They are important during intense exercise.",
-    "how to recover after workout": "Post-workout recovery includes proper nutrition (protein and carbs), hydration, stretching, and adequate sleep. Foam rolling can also help with muscle soreness.",
-    "what is a calorie deficit": "A calorie deficit occurs when you consume fewer calories than your body burns. It's a fundamental principle for weight loss.",
-    "what is meal prepping": "Meal prepping involves preparing meals or components of meals in advance. It helps with portion control, healthy eating, and saving time.",
-    "how to track progress": "Track your progress by monitoring your weight, measurements, strength gains, endurance improvements, and how your clothes fit. Take progress photos too!",
+    "How can I lose weight?": "Losing weight effectively usually involves a combination of regular physical activity and a balanced, calorie-controlled diet. Focusing on whole foods, lean protein, and plenty of vegetables can be very helpful. What kind of physical activities do you enjoy, or are there any dietary approaches you're curious about? This will help me give more tailored suggestions for exercise or healthy eating habits.",
+    "Suggest a good workout for beginners!": "Absolutely! For beginners, it's often best to start with full-body workouts 2-3 times a week to build a solid foundation. This could include bodyweight exercises like **Bodyweight Squats**, **Push-ups** (on knees if needed), **Lunges**, and **Planks**. Do you prefer to work out at home, or do you have access to gym equipment? And roughly how much time are you looking to dedicate per session?",
+    "What are some good ABS exercises?": "For targeting your abdominal muscles and strengthening your core, exercises like **Crunches**, **Leg Raises**, **Plank variations** (like forearm plank or side plank), and **Russian Twists** are effective. Remember, a strong core contributes to overall stability and posture! Are you looking to add these to an existing routine, or would you like ideas for a dedicated core workout?",
+    "How can I eat healthier?": "That's a great goal! Eating healthier generally means focusing on whole, unprocessed foods, increasing your intake of fruits and vegetables, choosing lean protein sources (like chicken, fish, beans, or tofu), incorporating healthy fats (like avocados or nuts), and ensuring you're well-hydrated. Are you interested in tips for meal planning, understanding macronutrients (proteins, carbs, fats), or perhaps some healthy snack ideas to get you started?",
+    "I have no motivation to exercise!": "It's completely normal to feel a lack of motivation sometimes! Setting small, achievable goals can make a big difference – even a 10-minute walk is a win. Finding an activity you genuinely enjoy is also key, as it makes exercise feel less like a chore. What kind of activities have you considered or enjoyed in the past, or what usually makes you feel unmotivated?",
+    "What should I eat before a workout?": "Fueling your body before a workout can help with energy and performance. Generally, having some easily digestible carbohydrates about 1-2 hours beforehand is a good idea. This could be something like a banana, a small bowl of oatmeal, or a piece of fruit. What kind of workout are you planning, and how long will it be? That can help refine the suggestion.",
+    "What should I eat after a workout?": "After a workout, it's beneficial to consume a combination of protein and carbohydrates within an hour or two to aid muscle recovery and replenish energy stores. Good options include Greek yogurt with berries, a protein shake with a banana, chicken breast with quinoa, or a tuna sandwich on whole-wheat bread. What are your main fitness goals, such as muscle building or endurance improvement?",
+    "Can you suggest some cardio exercises!": "Certainly! Cardiovascular exercises, or 'cardio,' are great for heart health, endurance, and burning calories. Popular options include **Running** or **Jogging**, **Cycling** (indoors or outdoors), **Swimming**, **Brisk Walking**, using an **Elliptical Trainer**, or even **Dancing**. Are you looking for low-impact options, something you can do at home, or are you training for a specific endurance goal?"
 }
 
 SYSTEM_INSTRUCTION = (
-    "You are an expert fitness chatbot. Your goal is to provide comprehensive, detailed, and well-structured information "
-    "related to fitness, exercise, nutrition, and general well-being. "
-    "You can use markdown formatting such as lists (using hyphens or asterisks for bullet points), "
-    "bolding (using double asterisks **like this**), and paragraphs to make your answers clear and easy to read. "
-    "If a user asks a question that is not related to fitness, politely inform them that your expertise is in fitness "
-    "and you cannot answer non-fitness related questions. "
-    "Strive to be thorough in your explanations. Ensure your advice is safe and generally applicable. "
-    "For specific medical or dietary conditions, always advise the user to consult a professional."
+    "\n**Core Principle: User Safety First.** Always preface advice with a disclaimer, especially on first interaction or when suggesting new routines/significant changes. Example: 'Remember to consult with your doctor or a qualified fitness professional before starting any new exercise program or making significant changes to your diet. My suggestions are for informational purposes only and are not a substitute for professional medical advice.'"
+    "\n\nWhen a user interacts with you:"
+    "\n1. If the user's query is clearly a request for fitness guidance (e.g., 'suggest a workout for abs,' 'how can I eat healthier?', 'I need motivation to exercise'):"
+    "   a. Try to understand their specific goals, current fitness level, preferences, and any limitations they mention. If the request is vague (e.g., 'help me get fit'), ask clarifying questions "
+    "      like 'What are your main fitness goals (e.g., weight loss, muscle gain, endurance, flexibility)?', 'What's your current experience with exercise?', 'Do you have access to a gym or prefer home workouts?', 'How much time can you dedicate?', or 'Are there any types of activities you particularly enjoy or dislike?'. "
+    "   b. Aim to provide 2-4 distinct and actionable suggestions if possible (e.g., specific exercises, a sample workout structure, meal ideas). For each suggestion, briefly explain its benefits, how to perform it correctly (if an exercise, with emphasis on form and safety), or why it aligns with their goals. "
+    "   c. Use markdown formatting to make your answers clear and engaging: "
+    "      - Use bolding for exercise names, routine titles, or key concepts (e.g., '**Push-ups**', '**Beginner Full Body Routine**', '**Calorie Deficit**'). "
+    "      - Use bullet points (hyphens or asterisks) for lists of exercises, tips, or meal components. "
+    "      - Use paragraphs for explanations and instructions. "
+    "   d. Utilize the provided conversation history from the current session effectively. "
+    "      - Avoid re-suggesting exercises or plans already discussed and dismissed in this ongoing conversation unless the user asks for them again or for more details/modifications."
+    "      - If the user has mentioned goals, preferences, limitations, or progress earlier in the current conversation, acknowledge this and incorporate that context into your current suggestions to make them more personalized and coherent. For example, 'Since you mentioned you want to focus on upper body strength and have access to dumbbells, here are a couple of routines...'"
+    "   e. Always prioritize safety. If a user mentions a potential injury or medical condition, gently remind them to consult a healthcare professional and offer to provide general fitness information that doesn't exacerbate their condition, if appropriate and safe. (e.g., 'I can't give advice for specific injuries, but if you're cleared for gentle activity, perhaps some light stretching or mobility work could be discussed?')"
+    "\n2. If the user's query is not a request for fitness guidance (e.g., asking 'What is the capital of Spain?', 'Who are you beyond a fitness bot?', 'Tell me a story?', 'What's the weather like?', 'Calculate my mortgage'):"
+    "   a. You must politely decline to answer the question directly. "
+    "   b. Clearly state your specialized role as a Fitness Chatbot. "
+    "   c. Immediately attempt to redirect the conversation back to fitness, exercise, nutrition, or motivation. "
+    "   d. Example refusals: "
+    "      - User: 'What's the latest news?' You: 'My focus is on helping you with your fitness journey! I can't provide news updates, but I can definitely help you plan your next workout or offer some healthy eating tips. What are you working on today?'"
+    "      - User: 'Can you explain quantum physics?' You: 'I'm designed to be your go-to for fitness and nutrition information. While I can't explain quantum physics, perhaps you'd like some tips on improving your workout intensity or understanding macronutrients?'"
+    "      - User: 'Tell me about your creators.' You: 'I'm a Fitness Chatbot AI, here to assist you with your exercise routines, nutrition questions, and keeping you motivated! Do you have any fitness goals you'd like to discuss?'"
+    "\n3. If a user asks for something you cannot ethically or safely provide (e.g., advice on illegal substances, promotion of eating disorders, extremely dangerous exercises, or specific medical advice/diagnosis): "
+    "   a. Politely and firmly state that you cannot help with that specific request due to safety, ethical, or scope limitations. "
+    "   b. Do not be preachy, but be clear. "
+    "   c. Offer to help with safe and appropriate fitness-related topics. Example: 'I cannot provide guidance on [harmful request]. My purpose is to promote health and safety. However, I can help you with creating a balanced workout plan or offer tips for healthy eating if you're interested.'"
+    "\n4. Do not invent exercises, nutritional information, or unsubstantiated fitness claims. If you are unsure about a very specific or obscure request, or if it borders on medical advice: "
+    "   a. State that you don't have specific information on that item or that it's outside your scope. "
+    "   b. Offer to provide information on more general, established, and safe alternatives or related concepts. "
+    "   c. Reiterate the importance of consulting with qualified professionals for specific or complex needs. Example: 'I don't have information on that specific unconventional training method. It's always best to stick to well-researched exercises or consult a certified trainer for such specialized requests. Would you like help with some foundational strength exercises instead?'"
+    "\n5. Your tone should be helpful, friendly, encouraging, motivating, and empathetic, but also firm on matters of safety and scope. "
+    "\n6. Exception for factual fitness-related questions: If a user asks a factual question directly related to fitness, exercise, or general nutrition that could lead to or support guidance (e.g., 'What muscles do lunges work?', 'How many calories in a banana?', 'What is HIIT?'):"
+    "   a. You can provide a brief, concise, and accurate answer. "
+    "   b. Then, try to pivot to personalized advice or a recommendation. Do not go into overly lengthy explanations. "
+    "   c. Example: 'Lunges primarily work your quadriceps, glutes, and hamstrings, and also engage your core for stability. They are a great compound exercise! Would you like to incorporate them into a leg workout routine, or learn some variations?'"
+    "\n\nStick to your role as a Fitness Chatbot AI diligently. Your goal is to guide and support users in their fitness journey safely and effectively, not to be a general conversationalist or a substitute for professional medical or certified expert advice. Be mindful of the ongoing conversation to provide a seamless, intelligent, and motivating fitness support experience."
 )
 
 def strip_markdown(text):
     return text
 
-async def get_chatbot_response(user_message: str, conversation_api_history: list) -> str:
-    normalized_message = user_message.lower().strip()
+with st.sidebar:
+    st.subheader("Our Team")
+    group_members = [
+        {"name": "Waleed Qamar", "github_url": "https://github.com/waleed719"},
+        {"name": "Muhammad Mubeen Butt", "github_url": "https://github.com/MuhammadMubeenButt"},
+        {"name": "Muhammad Musa", "github_url": "https://github.com/man-exe"},
+    ]
+    for member in group_members:
+        st.markdown(f"* [{member['name']}]({member['github_url']})")
+    st.markdown("")
 
-    if normalized_message in FITNESS_FAQS:
-        return FITNESS_FAQS[normalized_message]
+    st.markdown("---")
+    st.subheader("Project Link")
+    st.link_button("View Source Code", "https://github.com/your_username/your_project_repo", use_container_width=True, type="secondary")
+    st.caption("Built with Streamlit & Gemini")
 
+async def get_chatbot_response_from_api(user_message: str, conversation_api_history: list) -> str:
     if not GEMINI_API_KEY:
         return "API Key for Gemini is not configured. Please set the GEMINI_API_KEY environment variable."
 
-    api_payload_contents = [{"role": "user", "parts": [{"text": SYSTEM_INSTRUCTION}]}] + conversation_api_history[-10:]
+    api_payload_contents = [{"role": "user", "parts": [{"text": SYSTEM_INSTRUCTION}]}] + \
+                           conversation_api_history[-10:] 
 
     payload = {
         "contents": api_payload_contents,
@@ -66,254 +95,176 @@ async def get_chatbot_response(user_message: str, conversation_api_history: list
             "topK": 40,
             "maxOutputTokens": 1500
         },
-        # --- FIX APPLIED HERE: safetySettings moved outside generationConfig ---
         "safetySettings": [
             {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
         ]
-        # --- END OF FIX ---
     }
 
     try:
         async with httpx.AsyncClient(timeout=90.0) as client:
             response = await client.post(API_URL, json=payload)
-            response.raise_for_status()
+            response.raise_for_status() 
             result = response.json()
 
         if result.get('candidates') and result['candidates'][0].get('content') and result['candidates'][0]['content'].get('parts'):
             bot_response_text = result['candidates'][0]['content']['parts'][0]['text']
             return strip_markdown(bot_response_text)
-
         elif result.get('candidates') and result['candidates'][0].get('finishReason') == 'SAFETY':
-            st.warning("The response was adjusted due to safety guidelines. Some information might be missing.")
+            safety_message = "I'm unable to provide a complete response to that specific query due to safety guidelines."
             if result['candidates'][0].get('content') and result['candidates'][0]['content'].get('parts'):
-                return strip_markdown(result['candidates'][0]['content']['parts'][0]['text']) + \
-                       "\n\n*[Note: This response may have been modified due to safety settings.]*"
-            return "I'm unable to provide a complete response to that specific query due to safety guidelines. Please try rephrasing."
+                safety_message = strip_markdown(result['candidates'][0]['content']['parts'][0]['text']) + \
+                                 "\n\n*[Note: This response may have been modified due to safety settings.]*"
+            return f"SAFETY_WARNING::{safety_message}"
         elif not result.get('candidates') and result.get('promptFeedback', {}).get('blockReason'):
             block_reason = result['promptFeedback']['blockReason']
-            st.warning(f"Your request could not be processed because it was blocked: {block_reason}. Please rephrase your message.")
-            return f"Your request was blocked by content filters ({block_reason}). Please avoid such topics or rephrase your query."
+            return f"BLOCKED_PROMPT::Your request could not be processed because it was blocked: {block_reason}. Please rephrase your message."
         else:
-            st.error(f"Unexpected API response structure or empty candidates: {result}")
-            return "I'm sorry, I couldn't generate a response at this time. (API structure issue or no content)"
+            print(f"Unexpected API response structure or empty candidates: {result}")
+            return "ERROR::I'm sorry, I couldn't generate a response at this time. (API structure issue or no content)"
 
     except httpx.RequestError as e:
-        st.error(f"RequestError connecting to Gemini API: {e}")
-        return "I'm having trouble connecting to my knowledge base. Please check your internet or try again later."
+        print(f"RequestError connecting to Gemini API: {e}")
+        return f"ERROR::I'm having trouble connecting to my knowledge base. Please check your internet or try again later."
     except httpx.HTTPStatusError as e:
-        st.error(f"HTTPStatusError from Gemini API: {e.response.status_code} - {e.response.text}")
-        error_details = e.response.json()
-        error_message = error_details.get("error", {}).get("message", "No specific error message provided by API.")
-        return f"There was an issue with the API (Status {e.response.status_code}): {error_message}. Please try again later."
-    except Exception as e:
-        st.error(f"An unexpected error occurred: {e}")
-        return "I'm having a bit of trouble understanding right now. Could you try rephrasing?"
+        print(f"HTTPStatusError from Gemini API: {e.response.status_code} - {e.response.text}")
+        error_details = {}
+        try:
+            error_details = e.response.json() 
+        except Exception:
+            pass 
+        error_message_from_api = error_details.get("error", {}).get("message", "No specific error message provided by API.")
+        return f"ERROR::There was an issue with the API (Status {e.response.status_code}): {error_message_from_api}. Please try again later."
+    except Exception as e: 
+        print(f"An unexpected error occurred in API call: {e}")
+        return "ERROR::I'm having a bit of trouble understanding right now. Could you try rephrasing?"
 
-st.set_page_config(page_title="Fitness Chatbot Pro", page_icon="🏋️‍♂️", layout="centered")
-
-custom_theme_css = """
-<style>
-:root {
-    --primary-color: #E63946;
-    --background-color: #1A1A1A;
-    --secondary-background-color: #262730;
-    --text-color: #FAFAFA;
-    --chat-bubble-user-color: #31333F;
-    --chat-bubble-assistant-color: var(--secondary-background-color);
-    --border-color: #444444;
-}
-
-.stApp {
-    background-color: var(--background-color) !important;
-}
-
-body {
-    background-color: var(--background-color) !important;
-    color: var(--text-color) !important;
-}
-
-h1, h2, h3, h4, h5, h6, p, li, span, div, .stMarkdown, .stText {
-    color: var(--text-color) !important;
-}
-
-.st-emotion-cache-nahz7x {
-    color: var(--text-color) !important;
-}
-.st-emotion-cache-1r6c0d6 {
-    color: var(--text-color) !important;
-}
-
-.stSidebar {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-}
-
-.stSidebar .st-emotion-cache-1cpx6h, .stSidebar .st-emotion-cache-109040r {
-    color: var(--text-color) !important;
-}
-
-.stSidebar a {
-    color: var(--primary-color) !important;
-    text-decoration: none;
-}
-.stSidebar a:hover {
-    color: lightgray !important;
-    text-decoration: underline;
-}
-
-.stButton button {
-    background-color: var(--primary-color) !important;
-    color: var(--text-color) !important;
-    border: 1px solid var(--primary-color) !important;
-    border-radius: 5px !important;
-    transition: background-color 0.3s ease;
-}
-.stButton button:hover {
-    background-color: #BB2D3A !important;
-    color: white !important;
-    border-color: #BB2D3A !important;
-}
-
-.stTextInput > div > div > input,
-.stNumberInput > div > div > input,
-.stTextArea > div > div > textarea,
-.stSelectbox > div > div > div > input {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 5px !important;
-}
-.stSelectbox > div > div > div > div {
-    color: var(--text-color) !important;
-}
-
-.stChatMessage {
-    padding: 10px !important;
-    border-radius: 10px !important;
-    margin-bottom: 10px !important;
-}
-
-.stChatMessage.st-emotion-cache-user .stMarkdown {
-    background-color: var(--chat-bubble-user-color) !important;
-    color: var(--text-color) !important;
-    border-radius: 10px !important;
-    padding: 10px !important;
-}
-
-.stChatMessage.st-emotion-cache-assistant .stMarkdown {
-    background-color: var(--chat-bubble-assistant-color) !important;
-    color: var(--text-color) !important;
-    border-radius: 10px !important;
-    padding: 10px !important;
-}
-
-.st-emotion-cache-1oe5f0g, .st-emotion-cache-f1x29i, .st-emotion-cache-1d37b6c {
-    background-color: var(--secondary-background-color) !important;
-    border-top: 1px solid var(--border-color) !important;
-    padding: 10px 0 !important;
-}
-.st-emotion-cache-1ae4qfn {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 5px !important;
-}
-
-.viewerBadge_container__1QSob, .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137, .viewerBadge_text__1JaDK {
-    display: none !important;
-    visibility: hidden !important;
-}
-
-#MainMenu {
-    display: none !important;
-    visibility: hidden !important;
-}
-footer {
-    display: none !important;
-    visibility: hidden !important;
-}
-#GithubIcon {
-    display: none !important;
-    visibility: hidden !important;
-}
-</style>
-"""
-st.markdown(custom_theme_css, unsafe_allow_html=True)
-
-
-st.title("🏋️‍♂️ Fitness Chatbot Pro")
+st.title("💬 Fitness Chatbot Pro")
 st.caption("Your AI assistant for detailed fitness, exercise, and nutrition advice.")
 
-st.sidebar.title("Our Team")
-st.sidebar.markdown("---")
-
-group_members = [
-    {"name": "Waleed Qamar", "github_url": "https://github.com/waleed719"},
-    {"name": "Muhammad Mubeen Butt", "github_url": "https://github.com/MuhammadMubeenButt"},
-    {"name": "Muhammad Musa", "github_url": "https://github.com/man-exe"},
-]
-
-for member in group_members:
-    st.sidebar.markdown(f"**[{member['name']}]({member['github_url']})**")
-    st.sidebar.markdown("")
-
-st.sidebar.markdown("---")
+if "fitness_chatbot_messages" not in st.session_state:
+    st.session_state.fitness_chatbot_messages = [{"id": str(uuid.uuid4()), "role": "assistant", "content": "Hello! I'm your Fitness Chatbot Pro. Ask me anything about fitness, or select a common question below!"}]
+if "fitness_chatbot_api_history" not in st.session_state:
+    st.session_state.fitness_chatbot_api_history = [] 
+if "user_started_conversation" not in st.session_state:
+    st.session_state.user_started_conversation = False
 
 
-if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hello! I'm your Fitness Chatbot Pro. Ask me anything about fitness for a detailed response!"}]
-if "conversation_api_history" not in st.session_state:
-    st.session_state.conversation_api_history = []
+if not st.session_state.user_started_conversation:
+    st.subheader("💡 Quick Questions (FAQs)")
+    num_faq_columns = 2
+    faq_cols = st.columns(num_faq_columns)
+    faq_items_list = list(FITNESS_FAQS.items())
 
+    for i, (question, answer) in enumerate(faq_items_list):
+        col_index = i % num_faq_columns
+        if faq_cols[col_index].button(question, key=f"faq_btn_{i}", use_container_width=True):
+            st.session_state.user_started_conversation = True
+            user_faq_msg_id = str(uuid.uuid4())
+            st.session_state.fitness_chatbot_messages.append({"id": user_faq_msg_id, "role": "user", "content": question})
+            st.session_state.fitness_chatbot_api_history.append({"role": "user", "parts": [{"text": question}]})
+            
+            bot_faq_msg_id = str(uuid.uuid4())
+            st.session_state.fitness_chatbot_messages.append({"id": bot_faq_msg_id, "role": "assistant", "content": answer})
+            st.session_state.fitness_chatbot_api_history.append({"role": "model", "parts": [{"text": answer}]})
+            st.rerun() 
+    st.markdown("---")
 
-for message in st.session_state.messages:
+for message in st.session_state.fitness_chatbot_messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("Ask for detailed fitness advice..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.conversation_api_history.append({"role": "user", "parts": [{"text": prompt}]})
+input_label = "Ask for detailed fitness advice..."
+if prompt := st.chat_input(input_label, key="fitness_chat_main_input", disabled=not GEMINI_API_KEY):
+    st.session_state.user_started_conversation = True
+
+    user_msg_id = str(uuid.uuid4())
+    st.session_state.fitness_chatbot_messages.append({"id": user_msg_id, "role": "user", "content": prompt})
+    st.session_state.fitness_chatbot_api_history.append({"role": "user", "parts": [{"text": prompt}]})
 
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        message_placeholder.markdown("Fitness bot is thinking...")
+        message_placeholder.markdown("Fitness bot is thinking... 🧠")
+
+        bot_response_content = ""
+        normalized_prompt = prompt.lower().strip()
+        matched_faq_answer = None
+
+        for faq_q, faq_a in FITNESS_FAQS.items():
+            if faq_q.lower() == normalized_prompt:
+                matched_faq_answer = faq_a
+                break
         
-        bot_response = ""
-        try:
-            bot_response = asyncio.run(get_chatbot_response(prompt, st.session_state.conversation_api_history))
-        except RuntimeError as e:
-            if "cannot run current event loop" in str(e).lower() or "event loop is closed" in str(e).lower():
+        if matched_faq_answer:
+            bot_response_content = matched_faq_answer
+        else:
+            try:
                 try:
                     loop = asyncio.get_event_loop()
                     if loop.is_closed():
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
-                except RuntimeError:
+                except RuntimeError: 
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
-                
-                bot_response = loop.run_until_complete(get_chatbot_response(prompt, st.session_state.conversation_api_history))
-            else:
-                st.error(f"An unexpected runtime error occurred while running async code: {e}")
-                bot_response = "Sorry, I encountered a technical glitch. Please try again."
-        except Exception as e:
-            st.error(f"An error occurred while getting the bot response: {e}")
-            bot_response = "I had trouble processing that. Could you try rephrasing?"
-        
-        message_placeholder.markdown(bot_response)
 
-    st.session_state.messages.append({"role": "assistant", "content": bot_response})
-    st.session_state.conversation_api_history.append({"role": "model", "parts": [{"text": bot_response}]})
+                api_response = loop.run_until_complete(
+                    get_chatbot_response_from_api(prompt, st.session_state.fitness_chatbot_api_history)
+                )
 
-    if len(st.session_state.conversation_api_history) > 12:
-        st.session_state.conversation_api_history = st.session_state.conversation_api_history[-12:]
+                if api_response.startswith("ERROR::"):
+                    st.error(api_response.replace("ERROR::", "")) 
+                    bot_response_content = "Sorry, I encountered a technical problem. Please try again."
+                elif api_response.startswith("SAFETY_WARNING::"):
+                    st.warning("The response was adjusted due to safety guidelines. Some information might be missing.")
+                    bot_response_content = api_response.replace("SAFETY_WARNING::", "")
+                elif api_response.startswith("BLOCKED_PROMPT::"):
+                    st.warning(api_response.replace("BLOCKED_PROMPT::", ""))
+                    bot_response_content = "I cannot respond to that query. Please rephrase or ask something else."
+                else:
+                    bot_response_content = api_response
+            
+            except RuntimeError as e: 
+                if "cannot run current event loop" in str(e).lower() or "event loop is closed" in str(e).lower():
+                    st.warning("Retrying API call due to event loop issue...")
+                    try:
+                        loop = asyncio.new_event_loop() 
+                        asyncio.set_event_loop(loop)
+                        api_response = loop.run_until_complete(
+                            get_chatbot_response_from_api(prompt, st.session_state.fitness_chatbot_api_history)
+                        )
+                        if api_response.startswith("ERROR::"): bot_response_content = "Sorry, an error occurred on retry."
+                        elif api_response.startswith("SAFETY_WARNING::"): bot_response_content = api_response.replace("SAFETY_WARNING::", "")
+                        elif api_response.startswith("BLOCKED_PROMPT::"): bot_response_content = "Request blocked on retry."
+                        else: bot_response_content = api_response
+                    except Exception as inner_e:
+                        st.error(f"Critical error in event loop management during retry: {inner_e}")
+                        bot_response_content = "A critical error occurred. Please refresh."
+                else: 
+                    st.error(f"An unexpected runtime error occurred: {e}")
+                    bot_response_content = "Sorry, I encountered a technical glitch."
+            except Exception as e: 
+                st.error(f"An error occurred while getting the bot response: {e}")
+                bot_response_content = "I had trouble processing that. Could you try rephrasing?"
+
+        message_placeholder.markdown(bot_response_content) 
+
+    bot_msg_id = str(uuid.uuid4())
+    st.session_state.fitness_chatbot_messages.append({"id": bot_msg_id, "role": "assistant", "content": bot_response_content})
+    st.session_state.fitness_chatbot_api_history.append({"role": "model", "parts": [{"text": bot_response_content}]})
+
+    if len(st.session_state.fitness_chatbot_api_history) > 12: 
+        st.session_state.fitness_chatbot_api_history = st.session_state.fitness_chatbot_api_history[-12:]
+    
+    st.rerun() 
 
 if not GEMINI_API_KEY:
-    st.error("FATAL: GEMINI_API_KEY is not set. The chatbot will not be able to connect to the Gemini API.")
-    st.info("Please set the GEMINI_API_KEY environment variable. If deploying on Heroku, set it as a Config Var.")
+    st.error("🔴 FATAL: GEMINI_API_KEY is not set in your .env file or environment variables.")
+    st.info("Please create a `.env` file in the project root directory and add `GEMINI_API_KEY='YOUR_API_KEY'`.")
+    st.info("If deploying, set this as an environment variable or secret on your hosting platform.")
+    st.stop()
