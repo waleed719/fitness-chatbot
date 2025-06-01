@@ -48,7 +48,7 @@ SYSTEM_INSTRUCTION = (
     "\n3. If a user asks for something you cannot ethically or safely provide (e.g., advice on illegal substances, promotion of eating disorders, extremely dangerous exercises, or specific medical advice/diagnosis): "
     "   a. Politely and firmly state that you cannot help with that specific request due to safety, ethical, or scope limitations. "
     "   b. Do not be preachy, but be clear. "
-    "   c. Offer to help with safe and appropriate fitness-related topics. Example: 'I cannot provide guidance on [harmful request]. My purpose is to promote health and safety. However, I can help you with creating a balanced workout plan or offer tips for healthy eating if you're interested.'"
+    "   c. Offer to help with safe and appropriate fitness-related topics. Example: 'Icannot provide guidance on [harmful request]. My purpose is to promote health and safety. However, I can help you with creating a balanced workout plan or offer tips for healthy eating if you're interested.'"
     "\n4. Do not invent exercises, nutritional information, or unsubstantiated fitness claims. If you are unsure about a very specific or obscure request, or if it borders on medical advice: "
     "   a. State that you don't have specific information on that item or that it's outside your scope. "
     "   b. Offer to provide information on more general, established, and safe alternatives or related concepts. "
@@ -61,25 +61,23 @@ SYSTEM_INSTRUCTION = (
     "\n\nStick to your role as a Fitness Chatbot AI diligently. Your goal is to guide and support users in their fitness journey safely and effectively, not to be a general conversationalist or a substitute for professional medical or certified expert advice. Be mindful of the ongoing conversation to provide a seamless, intelligent, and motivating fitness support experience."
 )
 
-def strip_markdown_from_api_response(text):
-    return text
+def strip_markdown(text):
+    st.subheader("Our Team")
+    group_members = [
+        {"name": "Waleed Qamar", "github_url": "https://github.com/waleed719"},
+        {"name": "Muhammad Mubeen Butt", "github_url": "https://github.com/MuhammadMubeenButt"},
+        {"name": "Muhammad Musa", "github_url": "https://github.com/man-exe"},
+    ]
+    for member in group_members:
+        st.markdown(f"* [{member['name']}]({member['github_url']})")
+    st.markdown("") 
 
-def display_project_info_sidebar():
-    with st.sidebar:
-        st.subheader("Our Team")
-        group_members = [
-            {"name": "Waleed Qamar", "github_url": "https://github.com/waleed719"},
-            {"name": "Muhammad Mubeen Butt", "github_url": "https://github.com/MuhammadMubeenButt"},
-            {"name": "Muhammad Musa", "github_url": "https://github.com/man-exe"},
-        ]
-        for member in group_members:
-            st.markdown(f"* [{member['name']}]({member['github_url']})")
-        st.markdown("")
+    st.markdown("---") 
+    st.subheader("Project Link")
+    st.link_button("View Source Code", "https://github.com/waleed719/fitness-chatbot", use_container_width=True, type="secondary")
+    st.caption("Built with Streamlit & Gemini")
+    return text 
 
-        st.markdown("---")
-        st.subheader("Project Link")
-        st.link_button("View Source Code", "https://github.com/waleed719/fitness-chatbot", use_container_width=True, type="secondary")
-        st.caption("Built with Streamlit & Gemini")
 
 async def get_chatbot_response_from_api(user_message: str, conversation_api_history: list) -> str:
     if not GEMINI_API_KEY:
@@ -105,7 +103,7 @@ async def get_chatbot_response_from_api(user_message: str, conversation_api_hist
     }
 
     try:
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with httpx.AsyncClient(timeout=90.0) as client: 
             response = await client.post(API_URL, json=payload)
             response.raise_for_status() 
             result = response.json()
@@ -179,7 +177,7 @@ for message in st.session_state.fitness_chatbot_messages:
 
 input_label = "Ask for detailed fitness advice..."
 if prompt := st.chat_input(input_label, key="fitness_chat_main_input", disabled=not GEMINI_API_KEY):
-    st.session_state.user_started_conversation = True
+    st.session_state.user_started_conversation = True 
 
     user_msg_id = str(uuid.uuid4())
     st.session_state.fitness_chatbot_messages.append({"id": user_msg_id, "role": "user", "content": prompt})
@@ -207,7 +205,7 @@ if prompt := st.chat_input(input_label, key="fitness_chat_main_input", disabled=
             try:
                 try:
                     loop = asyncio.get_event_loop()
-                    if loop.is_closed():
+                    if loop.is_closed(): 
                         loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(loop)
                 except RuntimeError: 
@@ -230,6 +228,25 @@ if prompt := st.chat_input(input_label, key="fitness_chat_main_input", disabled=
                 else:
                     bot_response_content = api_response
             
+            except RuntimeError as e: 
+                if "cannot run current event loop" in str(e).lower() or "event loop is closed" in str(e).lower():
+                    st.warning("Retrying API call due to event loop issue...")
+                    try:
+                        loop = asyncio.new_event_loop() 
+                        asyncio.set_event_loop(loop)
+                        api_response = loop.run_until_complete(
+                            get_chatbot_response_from_api(prompt, st.session_state.fitness_chatbot_api_history)
+                        )
+                        if api_response.startswith("ERROR::"): bot_response_content = "Sorry, an error occurred on retry."
+                        elif api_response.startswith("SAFETY_WARNING::"): bot_response_content = api_response.replace("SAFETY_WARNING::", "")
+                        elif api_response.startswith("BLOCKED_PROMPT::"): bot_response_content = "Request blocked on retry."
+                        else: bot_response_content = api_response
+                    except Exception as inner_e:
+                        st.error(f"Critical error in event loop management during retry: {inner_e}")
+                        bot_response_content = "A critical error occurred. Please refresh."
+                else: 
+                    st.error(f"An unexpected runtime error occurred: {e}")
+                    bot_response_content = "Sorry, I encountered a technical glitch."
             except Exception as e: 
                 st.error(f"An error occurred while getting the bot response: {e}")
                 bot_response_content = "I had trouble processing that. Could you try rephrasing?"
