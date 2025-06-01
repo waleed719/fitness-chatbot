@@ -39,7 +39,7 @@ To get this project up and running on your local machine, follow these general s
 
 1.  **Clone the repository:**
     ```bash
-    git clone [[https://github.com/waleed719/fitness-chatbot.git](https://github.com/waleed719/fitness-chatbot.git)](https://github.com/waleed719/fitness-chatbot)
+    git clone https://github.com/waleed719/fitness-chatbot
     cd fitness-chatbot
     ```
 
