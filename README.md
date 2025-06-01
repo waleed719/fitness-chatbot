@@ -69,7 +69,6 @@ To get this project up and running on your local machine, follow these general s
 Once the setup is complete, you can run the application using Streamlit:
 
 1.  **Run the Streamlit application:**
-    Assuming the main application script is `app.py` (or the name of your main Python file):
     ```bash
     streamlit run app.py
     ```
