@@ -62,6 +62,9 @@ SYSTEM_INSTRUCTION = (
 )
 
 def strip_markdown(text):
+    return text
+
+def sidebar_info(text):
     st.subheader("Our Team")
     group_members = [
         {"name": "Waleed Qamar", "github_url": "https://github.com/waleed719"},
@@ -76,7 +79,6 @@ def strip_markdown(text):
     st.subheader("Project Link")
     st.link_button("View Source Code", "https://github.com/waleed719/fitness-chatbot", use_container_width=True, type="secondary")
     st.caption("Built with Streamlit & Gemini")
-    return text 
 
 
 async def get_chatbot_response_from_api(user_message: str, conversation_api_history: list) -> str:
