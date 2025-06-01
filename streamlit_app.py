@@ -64,7 +64,7 @@ SYSTEM_INSTRUCTION = (
 def strip_markdown(text):
     return text
 
-def sidebar_info():
+def sidebar_info(text):
     st.subheader("Our Team")
     group_members = [
         {"name": "Waleed Qamar", "github_url": "https://github.com/waleed719"},
