@@ -70,7 +70,7 @@ Once the setup is complete, you can run the application using Streamlit:
 
 1.  **Run the Streamlit application:**
     ```bash
-    streamlit run app.py
+    streamlit run streamlit_app.py
     ```
 
 2.  **Access the chatbot:**
