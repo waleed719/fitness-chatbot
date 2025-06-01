@@ -77,7 +77,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.subheader("Project Link")
-    st.link_button("View Source Code", "https://github.com/your_username/your_project_repo", use_container_width=True, type="secondary")
+    st.link_button("View Source Code", "https://github.com/waleed719/fitness-chatbot", use_container_width=True, type="secondary")
     st.caption("Built with Streamlit & Gemini")
 
 async def get_chatbot_response_from_api(user_message: str, conversation_api_history: list) -> str:
